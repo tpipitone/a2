@@ -54,7 +54,7 @@ void makeHeaderRec(vector<string> fileLines, string objFileName){
     out << "H" << progName << startAddr << progLen << endl; 
 }
 
-void makeTextRec(){
+void makeTextRec(vector<string> fileLines, string objFileName){
 
 }
 
@@ -62,17 +62,13 @@ void makeTextRec(){
 
 void makeEndRec(vector<string> fileLines, string objFileName){
 
-//open obj file
+    //open obj file
 
     for(int i = 0; i < fileLines.size(); i++){
         if(fileLines.at(i)[0] != '.'){  
             //add the addr of first instruction to obj file
         }
     }
-
-  
-
-    
 }
 
 
