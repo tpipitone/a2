@@ -7,17 +7,16 @@
 
 using namespace std;
 
-
 void makeESTAB(){
 
 }
 
-void makeHeaderRec(vector<string> fileLines, string objFileName){
+string makeHeaderRec(vector<string> fileLines, string objFileName){
     string startAddr, progName, progLen;
     bool foundName; 
 
     ofstream out;
-    out.open(objFileName);
+    out.open(objFileName, fstream::app);
 
     for(int i = 0; i < fileLines.size(); i++){
 
@@ -52,29 +51,29 @@ void makeHeaderRec(vector<string> fileLines, string objFileName){
         }
     }
     out << "H" << progName << startAddr << progLen << endl; 
+
+    return startAddr;
 }
 
-void makeTextRec(vector<string> fileLines, string objFileName){
+void makeTextRec(){
 
 }
 
 
 
-void makeEndRec(vector<string> fileLines, string objFileName){
+void makeEndRec(string objFileName, string startAddr){
 
-    //open obj file
-
-    for(int i = 0; i < fileLines.size(); i++){
-        if(fileLines.at(i)[0] != '.'){  
-            //add the addr of first instruction to obj file
-        }
-    }
+//open obj file
+	ofstream out;
+	out.open(objFileName, fstream::app);
+	out << "E" << startAddr << endl; 	
 }
 
 
 int main(int argc, char *argv[]) {
 
-    string line; 
+    string line;
+    string startAddr;
     vector<string> lines; // vector containing each line of the argv files
 
     if(argc == 1){
@@ -97,11 +96,12 @@ int main(int argc, char *argv[]) {
         objFileName = objFileName.substr(0,objFileName.size() - 4).append(".obj"); // creating obj files, filename of format "argv[i].obj"
         ofstream outfile(objFileName);
 
-        makeHeaderRec(lines, objFileName); // calling make header on the empty .obj files 
-        makeEndRec(lines,objFileName );
+        startAddr = makeHeaderRec(lines, objFileName); // calling make header on the empty .obj files 
+        makeEndRec(objFileName, startAddr);
     }
 
     
 }
+
 
 
