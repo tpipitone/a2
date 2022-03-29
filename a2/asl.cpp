@@ -7,6 +7,12 @@
 
 using namespace std;
 
+string replaceChar(string str, const string& replace, char ch){ // helper function, swaps ch2 for ch2 in a given string
+    size_t found = str.find_first_of(replace); 
+
+
+}
+
 void makeESTAB(){
 
 }
@@ -51,19 +57,63 @@ string makeHeaderRec(vector<string> fileLines, string objFileName){
         }
     }
     out << "H" << progName << startAddr << progLen << endl; 
-
     return startAddr;
 }
+
+
+void makeDefRec(vector<string> fileLines, string objFileName ){ // define record 
+    ofstream out;
+	out.open(objFileName, fstream::app);
+    out << "D";
+
+    vector<string> defSymbols;
+
+    for(int i = 0; i < fileLines.size(); i++){
+        if(fileLines.at(i)[0] != '.'){
+            int extDPos = fileLines.at(i).find("EXTDEF");
+            if(extDPos != string::npos){ // if EXTREF exists in this line
+                stringstream ss(fileLines.at(i).substr(extDPos+9)); //string of extrenal symbols, seperated by comma
+                
+                while(ss.good()){ // filling the vector defSymbols with symbols defined in EXTDREF
+                    string substr; 
+                    getline(ss, substr, ',');
+                    substr.resize(6, ' '); // formats to 6 char length
+                    defSymbols.push_back(substr); 
+                } 
+            }
+
+            for(int j = 0; j < defSymbols.size(); j++ ){
+                int symLocIndex = fileLines.at(i).substr(8,14).find(defSymbols.at(j));
+                if(symLocIndex != string::npos){ 
+                    string addr = fileLines.at(i).substr(0,6);
+                    addr.erase(remove(addr.begin(), addr.end(), ' '), addr.end()); // remove whitespace
+                    addr.insert(0, 6-addr.size(), '0'); // formatting 0's to front of addr str
+                    out << defSymbols.at(j) << addr; // writing to obj file
+                }
+            }
+        }
+    }
+
+    out << endl; 
+}
+
+
+void makeRelRec(vector<string> fileLines, string objFileName ){ // refer record
+
+}
+
 
 void makeTextRec(){
 
 }
 
 
+void makeModifRec(vector<string> fileLines, string objFileName ){
+
+}
+
 
 void makeEndRec(string objFileName, string startAddr){
-
-//open obj file
 	ofstream out;
 	out.open(objFileName, fstream::app);
 	out << "E" << startAddr << endl; 	
@@ -97,10 +147,9 @@ int main(int argc, char *argv[]) {
         ofstream outfile(objFileName);
 
         startAddr = makeHeaderRec(lines, objFileName); // calling make header on the empty .obj files 
+        makeDefRec(lines, objFileName);
         makeEndRec(objFileName, startAddr);
-    }
-
-    
+    } 
 }
 
 
