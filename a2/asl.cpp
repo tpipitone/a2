@@ -7,12 +7,6 @@
 
 using namespace std;
 
-string replaceChar(string str, const string& replace, char ch){ // helper function, swaps ch2 for ch2 in a given string
-    size_t found = str.find_first_of(replace); 
-
-
-}
-
 void makeESTAB(){
 
 }
