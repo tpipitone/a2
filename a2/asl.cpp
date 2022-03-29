@@ -18,13 +18,13 @@ string makeHeaderRec(vector<string> fileLines, string objFileName){
     ofstream out;
     out.open(objFileName, fstream::app);
 
-    for(int i = 0; i < fileLines.size(); i++){
+    for(auto line : fileLines){
 
-        if(fileLines.at(i)[0] != '.'){  //makes sure line is not a comment denoted with '.'
+        if(line[0] != '.'){  //makes sure line is not a comment denoted with '.'
 
-            int startPos = fileLines.at(i).find("START"); // looking for the line containg "START"
+            int startPos = line.find("START"); // looking for the line containg "START"
             if(startPos != string::npos){      
-                startAddr = fileLines.at(i).substr(startPos + 9, 5); // start location, +5 since the mem loc is 5 bits
+                startAddr = line.substr(startPos + 9, 5); // start location, +5 since the mem loc is 5 bits
                 startAddr.erase(remove(startAddr.begin(), startAddr.end(), ' '), startAddr.end()); // removes whitespace from startAddr
                 int l = startAddr.size(); 
                 for(int i = 0; i < 6-l; i++)
@@ -33,12 +33,12 @@ string makeHeaderRec(vector<string> fileLines, string objFileName){
 
         // index 9, first line is where the prog name is located 
             if(!foundName){
-                progName = fileLines.at(i).substr(8, 6);
+                progName = line.substr(8, 6);
                 foundName = true; 
             }
 
-            if(fileLines.at(i).find("EOF") != string::npos){   // finding prog len, on line containing 'EOF' 
-                progLen = fileLines.at(i).substr(0,4);
+            if(line.find("EOF") != string::npos){   // finding prog len, on line containing 'EOF' 
+                progLen = line.substr(0,4);
                 int hex_to_int = stoi(progLen, 0, 16) + 3; // adding hex +3 for format 3/4 progs
                 stringstream stream; 
                 stream << std::hex << hex_to_int; 
@@ -62,11 +62,11 @@ void makeDefRec(vector<string> fileLines, string objFileName ){ // define record
 
     vector<string> defSymbols;
 
-    for(int i = 0; i < fileLines.size(); i++){
-        if(fileLines.at(i)[0] != '.'){
-            int extDPos = fileLines.at(i).find("EXTDEF");
+    for(auto line : fileLines){
+        if(line[0] != '.'){
+            int extDPos = line.find("EXTDEF");
             if(extDPos != string::npos){ // if EXTREF exists in this line
-                stringstream ss(fileLines.at(i).substr(extDPos+9)); //string of extrenal symbols, seperated by comma
+                stringstream ss(line.substr(extDPos+9)); //string of extrenal symbols, seperated by comma
                 
                 while(ss.good()){ // filling the vector defSymbols with symbols defined in EXTDREF
                     string substr; 
@@ -77,9 +77,9 @@ void makeDefRec(vector<string> fileLines, string objFileName ){ // define record
             }
 
             for(int j = 0; j < defSymbols.size(); j++ ){
-                int symLocIndex = fileLines.at(i).substr(8,14).find(defSymbols.at(j));
+                int symLocIndex = line.substr(8,14).find(defSymbols.at(j));
                 if(symLocIndex != string::npos){ 
-                    string addr = fileLines.at(i).substr(0,6);
+                    string addr = line.substr(0,6);
                     addr.erase(remove(addr.begin(), addr.end(), ' '), addr.end()); // remove whitespace
                     addr.insert(0, 6-addr.size(), '0'); // formatting 0's to front of addr str
                     out << defSymbols.at(j) << addr; // writing to obj file
@@ -93,7 +93,30 @@ void makeDefRec(vector<string> fileLines, string objFileName ){ // define record
 
 
 void makeRelRec(vector<string> fileLines, string objFileName ){ // refer record
+    ofstream out;
+	out.open(objFileName, fstream::app);
+    out << "R";
 
+    vector<string> refSymbols;
+
+    for(auto line : fileLines){
+        if(line[0] != '.'){
+            int extRPos = line.find("EXTREF");
+            if(extRPos != string::npos){ // if EXTREF exists in this line
+                stringstream ss(line.substr(extRPos+9)); //string of extrenal symbols, seperated by comma
+                while(ss.good()){ // filling the vector refSymbols with symbols defined in EXTREF
+                    string substr; 
+                    getline(ss, substr, ',');
+                    substr.resize(6, ' '); // formats to 6 char length
+                    refSymbols.push_back(substr); 
+                } 
+            }
+        }
+    }
+
+    for(auto sym : refSymbols)
+        out << sym; 
+    out << endl; 
 }
 
 
@@ -142,6 +165,7 @@ int main(int argc, char *argv[]) {
 
         startAddr = makeHeaderRec(lines, objFileName); // calling make header on the empty .obj files 
         makeDefRec(lines, objFileName);
+        makeRelRec(lines, objFileName);
         makeEndRec(objFileName, startAddr);
     } 
 }
