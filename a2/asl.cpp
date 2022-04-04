@@ -13,7 +13,7 @@ void makeESTAB(){
 
 string makeHeaderRec(vector<string> fileLines, string objFileName){
     string startAddr, progName, progLen;
-    bool foundName; 
+    bool foundName = false; 
 
     ofstream out;
     out.open(objFileName, fstream::app);
@@ -87,12 +87,11 @@ void makeDefRec(vector<string> fileLines, string objFileName ){ // define record
             }
         }
     }
-
     out << endl; 
 }
 
 
-void makeRelRec(vector<string> fileLines, string objFileName ){ // refer record
+vector<string> makeRelRec(vector<string> fileLines, string objFileName ){ // refer record
     ofstream out;
 	out.open(objFileName, fstream::app);
     out << "R";
@@ -117,6 +116,8 @@ void makeRelRec(vector<string> fileLines, string objFileName ){ // refer record
     for(auto sym : refSymbols)
         out << sym; 
     out << endl; 
+
+    return refSymbols;
 }
 
 
@@ -125,8 +126,51 @@ void makeTextRec(){
 }
 
 
-void makeModifRec(vector<string> fileLines, string objFileName ){
+void makeModifRec(vector<string> fileLines, vector<string> refSymbols, string objFileName ){
+    ofstream out;
+	out.open(objFileName, fstream::app);
+	
+    string progName; 
+    bool foundName = false; 
 
+    for(auto line : fileLines){
+        if(line[0] != '.'){
+
+            if(!foundName){
+                progName = line.substr(8, 6);
+                foundName = true; 
+            }
+
+            for( auto symbol : refSymbols){
+                int has_symbol = line.find(symbol);
+                if(has_symbol != string::npos){
+                    symbol.erase(remove(symbol.begin(), symbol.end(), ' '), symbol.end()); // remove whitespace from sym
+                    string addr = line.substr(0,4);
+                    int hex_to_int = stoi(addr, 0, 16) + 1; // adding hex +1
+                    stringstream stream; 
+                    stream << std::hex << hex_to_int; 
+                    string res(stream.str()); 
+                    transform(res.begin(), res.end(), res.begin(), ::toupper);
+                    addr = res;   
+                    addr.insert(0, 6-addr.size(), '0');
+                    out << "M" << addr << "05+" << symbol <<endl; 
+                }
+            }
+
+            int has_format4 = line.find('+');
+            if(has_format4 != string::npos){
+                string addr = line.substr(0,4);
+                int hex_to_int = stoi(addr, 0, 16) + 1; // adding hex +1
+                stringstream stream; 
+                stream << std::hex << hex_to_int; 
+                string res(stream.str()); 
+                transform(res.begin(), res.end(), res.begin(), ::toupper);
+                addr = res;   
+                addr.insert(0, 6-addr.size(), '0');
+                out << "M" << addr << "05+" << progName <<endl; 
+            }
+        }
+    }
 }
 
 
@@ -148,7 +192,7 @@ int main(int argc, char *argv[]) {
         return 0; 
     }   
 
-    for(int i = 1; i < argc; i++){
+    for(int i = 1; i < argc; i++){ // runs thru all user inputted files
         ifstream f(argv[i]);
         if(!f.is_open()){
             cout << "ERROR OPENING '" << argv[i] << "'";
@@ -165,8 +209,10 @@ int main(int argc, char *argv[]) {
 
         startAddr = makeHeaderRec(lines, objFileName); // calling make header on the empty .obj files 
         makeDefRec(lines, objFileName);
-        makeRelRec(lines, objFileName);
+        vector<string> ext_references = makeRelRec(lines, objFileName);
+        makeModifRec(lines, ext_references, objFileName);
         makeEndRec(objFileName, startAddr);
+        
     } 
 }
 
