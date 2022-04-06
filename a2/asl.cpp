@@ -4,6 +4,8 @@
 #include <string> 
 #include <vector> 
 #include <algorithm>
+#include <math.h>
+#include <iomanip>
 
 using namespace std;
 
@@ -120,15 +122,78 @@ vector<string> makeRelRec(vector<string> fileLines, string objFileName ){ // ref
     return refSymbols;
 }
 
+string helper(string lines) {
+	string temp = "";
+	vector<char> result;
+	for (char ch : lines)
+    		{
+        // Copy only alphabetical characters and numeric digits
+            		result.push_back(ch);
+    		}
+    	if(result.size() > 50) {
+    		for(int i = 51; i < result.size(); i++) {
+    			temp += result.at(i);
+    		}
+    		return temp;
+    	} else {
+    		return "";
+    	}
+}
 
-void makeTextRec(){
-
+void makeTextRec(vector<string> fileLines, string objFileName){
+    ofstream out;
+    out.open(objFileName, fstream::app);
+    vector<string> objectCode;
+    vector<string> address;
+    int counter = 0;
+    int startPos = 0;
+    int endPos = 0;
+    string objectcode = "";
+    unsigned int length = 0;
+    string temp;
+        for(int i = 0; i < fileLines.size(); i++){
+        if(fileLines.at(i)[0] != '.') {
+            if (std::find(address.begin(), address.end(), fileLines.at(i).substr(0,4)) == address.end() and fileLines.at(i).substr(0,4) != "")
+            {
+              address.push_back(fileLines.at(i).substr(0,4));
+            }
+            temp = fileLines.at(i);
+            temp = helper(temp);
+            if(temp != "") {
+                objectCode.push_back(temp);
+            }
+        }
+    }
+    int j = 0;
+    int total = 0;
+    for(int i = 0; i < objectCode.size(); i++) {
+        cout << objectCode.at(i) << endl;
+    }
+    for(int i = 0; i < objectCode.size(); i++) {
+        j = floor(objectCode.at(i).size()/2);
+        length += j;
+        total += j;
+        endPos = i;
+        if(i == (objectCode.size()-1) or ((j == 4) and (length >= (59-3))) or ((j==5) and (length >= (59-4)))) {
+            for(int f = startPos; f <= endPos; f++) {
+                objectcode += objectCode.at(f);
+            }
+            out << "T" << address.at(startPos) << std::hex << length << objectcode;
+            out << endl;
+            startPos = endPos+1;
+            endPos++;
+            length = 0;
+        } else {
+            continue;
+        }
+    }
 }
 
 
 void makeModifRec(vector<string> fileLines, vector<string> refSymbols, string objFileName ){
     ofstream out;
 	out.open(objFileName, fstream::app);
+    vector<string> m_recLines; 
 	
     string progName; 
     bool foundName = false; 
@@ -136,15 +201,21 @@ void makeModifRec(vector<string> fileLines, vector<string> refSymbols, string ob
     for(auto line : fileLines){
         if(line[0] != '.'){
 
+            string addr = line.substr(0,4);
+
             if(!foundName){
                 progName = line.substr(8, 6);
                 foundName = true; 
             }
 
             for( auto symbol : refSymbols){
+                 
+                symbol.erase(remove(symbol.begin(), symbol.end(), ' '), symbol.end());
+              
                 int has_symbol = line.find(symbol);
-                if(has_symbol != string::npos){
-                    symbol.erase(remove(symbol.begin(), symbol.end(), ' '), symbol.end()); // remove whitespace from sym
+                int has_base = line.find("BASE"); 
+                if(has_symbol != string::npos && has_base == string::npos && addr != "0000"){ // make sure its not a BASE declaration
+                     
                     string addr = line.substr(0,4);
                     int hex_to_int = stoi(addr, 0, 16) + 1; // adding hex +1
                     stringstream stream; 
@@ -153,13 +224,22 @@ void makeModifRec(vector<string> fileLines, vector<string> refSymbols, string ob
                     transform(res.begin(), res.end(), res.begin(), ::toupper);
                     addr = res;   
                     addr.insert(0, 6-addr.size(), '0');
-                    out << "M" << addr << "05+" << symbol <<endl; 
+                   // out << "M" << addr << "05+" << symbol <<endl; 
+                    m_recLines.insert(m_recLines.end(), "M" + addr + "05+" + symbol);
                 }
             }
 
             int has_format4 = line.find('+');
-            if(has_format4 != string::npos){
-                string addr = line.substr(0,4);
+            int has_s; 
+
+            for (auto s : refSymbols){
+                has_s = line.find(s);
+            }
+
+            bool skip_line = (has_s != string::npos); // skips line if contains symbol, avoids duplicates in format 4
+
+            if(has_format4 != string::npos && !skip_line && addr != "0000"){
+                
                 int hex_to_int = stoi(addr, 0, 16) + 1; // adding hex +1
                 stringstream stream; 
                 stream << std::hex << hex_to_int; 
@@ -167,10 +247,30 @@ void makeModifRec(vector<string> fileLines, vector<string> refSymbols, string ob
                 transform(res.begin(), res.end(), res.begin(), ::toupper);
                 addr = res;   
                 addr.insert(0, 6-addr.size(), '0');
-                out << "M" << addr << "05+" << progName <<endl; 
+               // out << "M" << addr << "05+" << progName <<endl; 
+                m_recLines.insert(m_recLines.end(), "M"+ addr+ "05+"+ progName);
             }
         }
     }
+
+
+
+
+    std::vector<string>::reverse_iterator it = m_recLines.rbegin(); // need to make this delete duplicates
+    while (it != m_recLines.rend())
+    {
+        std::cout<<*it<<", ";
+        it++;
+    }
+
+    for( auto recLine : m_recLines){
+     //   cout << recLine << endl; 
+      continue;
+    }
+
+
+
+
 }
 
 
@@ -185,7 +285,7 @@ int main(int argc, char *argv[]) {
 
     string line;
     string startAddr;
-    vector<string> lines; // vector containing each line of the argv files
+     // vector containing each line of the argv files
 
     if(argc == 1){
         cout<<"NO FILE PROVIDED, TERMINATING"; 
@@ -194,6 +294,10 @@ int main(int argc, char *argv[]) {
 
     for(int i = 1; i < argc; i++){ // runs thru all user inputted files
         ifstream f(argv[i]);
+        vector<string> lines; //  this must be in the for loop, or all files will be written to lines vector
+        string line;
+        string startAddr; 
+       
         if(!f.is_open()){
             cout << "ERROR OPENING '" << argv[i] << "'";
             return 0;
@@ -210,6 +314,9 @@ int main(int argc, char *argv[]) {
         startAddr = makeHeaderRec(lines, objFileName); // calling make header on the empty .obj files 
         makeDefRec(lines, objFileName);
         vector<string> ext_references = makeRelRec(lines, objFileName);
+
+    
+        makeTextRec(lines, objFileName);
         makeModifRec(lines, ext_references, objFileName);
         makeEndRec(objFileName, startAddr);
         
