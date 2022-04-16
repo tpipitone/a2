@@ -9,6 +9,9 @@
 
 using namespace std;
 void makeESTAB(vector<string> fileLines, string startAddr){
+  //  ofstream outfile("ESTAB.st");
+    ofstream out;
+    out.open("ESTAB.st", fstream::app);
 	string progName, progLen;
 	bool foundName = false; 
 	vector<string> defSymbols;
@@ -36,8 +39,8 @@ void makeESTAB(vector<string> fileLines, string startAddr){
             }
         }
     }
-    cout << endl; 
-    cout << progName << "		" << startAddr << "	" << progLen << endl;
+    out << endl; 
+    out << progName << "		" << startAddr << "	" << progLen << endl;
 	for(auto line : fileLines){
         if(line[0] != '.'){
             int extDPos = line.find("EXTDEF");
@@ -58,7 +61,7 @@ void makeESTAB(vector<string> fileLines, string startAddr){
                     string addr = line.substr(0,6);
                     addr.erase(remove(addr.begin(), addr.end(), ' '), addr.end()); // remove whitespace
                     addr.insert(0, 6-addr.size(), '0'); // formatting 0's to front of addr str
-                    cout << "	" << defSymbols.at(j) << "	" << addr << endl; // writing to obj file
+                    out << "	" << defSymbols.at(j) << "	" << addr << endl; // writing to obj file
                 }
             }
         }
@@ -351,12 +354,15 @@ int main(int argc, char *argv[]) {
 
     string line;
     string startAddr;
+    
      // vector containing each line of the argv files
 
     if(argc == 1){
         cout<<"NO FILE PROVIDED, TERMINATING"; 
         return 0; 
     }   
+
+    std::ofstream { "ESTAB.st" };
 
     for(int i = 1; i < argc; i++){ // runs thru all user inputted files
         ifstream f(argv[i]);
