@@ -7,13 +7,13 @@
 0006             LDL     #1                        090001
 0009            +LDB     #TABLE2                   69100000
 000D             BASE     TABLE2
-0010    LOOP     ADD      TABLE,X                  1BA000
-0013             ADD      TABLE2,X                 1BC000
-0016             TIX      COUNT                    2F2000
-0019             JLT      LOOP                     3B2FF3
-001C            +STA      TOTAL                    0F100003
-0020             LDT      TOTAL                    772000
-0023    TOTAL    RESW     1
-0026    LEN      WORD     X'02C                    00002C
+000D    LOOP     ADD      TABLE,X                  1BA000
+0010             ADD      TABLE2,X                 1BC000
+0013             TIX      COUNT                    2F2000
+0016             JLT      LOOP                     3B2FF3
+0019            +STA      TOTAL                    0F100003
+001D             LDT      TOTAL                    772000
+0020    TOTAL    RESW     1
+0023    LEN      WORD     X'02C                    00002C
                  END
-0029    *       =C'EOF'                            454F46
+0026    *       =C'EOF'                            454F46
